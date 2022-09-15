@@ -1252,7 +1252,7 @@ do
                         linkPad.commandTree:addNode(linkPad.commandTree.rootNode, linkPad.targetsSelectorCommandNode)
                         linkPad.commandTree:addNode(linkPad.commandTree.rootNode, linkPad.actionControlCommandNode)
 
-                        linkPad.commandTree:setDisplayLockerCommandNode(linkPad.commandTree.rootNode)
+                        --linkPad.commandTree:setDisplayLockerCommandNode(linkPad.commandTree.rootNode)
                     end
                 end
 

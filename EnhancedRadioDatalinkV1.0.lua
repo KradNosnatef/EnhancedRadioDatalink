@@ -802,6 +802,7 @@ do
                 onlineGroupController.group = onlineGroup
                 onlineGroupController.groupName = onlineGroup:getName()
                 onlineGroupController.masterLinkPad = nil
+                onlineGroupController.public = {}
 
                 --text(显示在无线电指令上的文字)不应被改动，commandFunction索引过去的东西可以改，enable决定了这个能力目前可用与否
                 --头节点用来存激活开关指令，如果头结点的enable是true的话，后续所有capability的enable都会被当成是false
@@ -1104,7 +1105,7 @@ do
                 --所有的能力配置都必须任务一开始就配置好，但是你可以选择这个能力在游戏过程中何时可用何时不可用
                 do
                     --标准的侦查能力
-                    function onlineGroupController:initAreaRecon(reconCapability)
+                    function onlineGroupController.public:initAreaRecon(reconCapability)
                         local data = {
                             text = onlineGroupController.groupName .. ":实施区域侦查",
                             commandFunction = onlineGroupController.areaRecon,
@@ -1118,7 +1119,7 @@ do
                     end
 
                     --标准的高空水平定点轰炸，实施这种任务需要群组可以设置“执行任务-轰炸”这一航路点动作,bombingParams的缺省值和原型详见定义内
-                    function onlineGroupController:initHighAltitudeHorizontalBombing(bombingParams)
+                    function onlineGroupController.public:initHighAltitudeHorizontalBombing(bombingParams)
                         local localBombingParams = {
                             weaponType = nil,
                             expend = AI.Task.WeaponExpend["ONE"],
@@ -1159,7 +1160,7 @@ do
                     end
 
                     --近距离搜索和猎歼，实施这种任务需要群组可以设置“开始在航任务-搜索并攻击区域内目标”这一航路点动作，zoneRadius是其围绕SPI搜索猎歼的半径，缺省值800
-                    function onlineGroupController:initSearchAndHunting(zoneRadius)
+                    function onlineGroupController.public:initSearchAndHunting(zoneRadius)
                         local localZoneRadius = 800
                         if zoneRadius ~= nil then
                             localZoneRadius = zoneRadius
@@ -1178,7 +1179,7 @@ do
                     end
 
                     --进行激光照射指示的能力，distanceLimitation不填默认40km，laserCode不填默认1688，overHeatedTime不填默认60
-                    function onlineGroupController:initLaserSpotting(distanceLimitation, laserCode, overHeatedTime)
+                    function onlineGroupController.public:initLaserSpotting(distanceLimitation, laserCode, overHeatedTime)
                         local localDistanceLimitation = 40000
                         local localLaserCode = 1688
                         local localOverHeatedTime = 60

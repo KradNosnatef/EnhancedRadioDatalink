@@ -25,7 +25,7 @@ do
     --AI以组群为单位受支配和控制，如果你希望某个AI组群接受支配，应该在这里创建好它的数据链控制器
     local reconGroupController = OnlineGroupController.New(reconGroup) --创建reconGroup的数据链控制器
     reconGroupController.public:initAreaRecon(reconCapability) --向控制器声明该组群有区域侦查能力
-    reconGroupController.public:initLaserSpotting()
+    reconGroupController.public:initLaserSpotting(nil,1688,180)
 
     PublicLinkPad.public:insertOnlineGroupController(reconGroupController) --向数据链实例移交该控制器
 

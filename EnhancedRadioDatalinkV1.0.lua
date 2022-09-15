@@ -758,7 +758,7 @@ do
 
                 function targetsManagement:switchOffAutoSetSPIByUserMark()
                     if targetsManagement.autoSetSPIByUserMarkRecallNode ~= nil then
-                        SendMessageForRangeReference("已停止跟踪用户标记", 5,
+                        SendMessageForRangeReference("已停止自动接收用户标记", 5,
                             targetsManagement:getRangeReference())
                         UserMarkHandler.deleteRecallNode(targetsManagement.autoSetSPIByUserMarkRecallNode)
                         targetsManagement.autoSetSPIByUserMarkRecallNode = nil
@@ -1041,7 +1041,7 @@ do
                                             reasonString = reasonString .. "-超出距离限制"
                                         end
                                     else
-
+                                        reasonString = reasonString .. "-激光器需要冷却"
                                     end
                                 else
 
@@ -1090,7 +1090,7 @@ do
                                     }
                                 }
 
-                                SendMessageForRangeReference(onlineGroupController.groupName .. ":开始60秒激光照射"
+                                SendMessageForRangeReference(onlineGroupController.groupName .. ":开始激光照射"
                                     , 5, onlineGroupController:getRangeReference())
                                 timer.scheduleFunction(FunctionPackerAndCaller, functionPack
                                     , timer.getTime() + 0.241)

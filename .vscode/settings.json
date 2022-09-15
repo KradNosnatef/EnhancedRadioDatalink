@@ -1,0 +1,30 @@
+{
+    "Lua.diagnostics.globals": [
+        "land",
+        "trigger",
+        "coalition",
+        "missionCommands",
+        "timer",
+        "AI",
+        "Spot",
+        "world",
+        "env",
+        "atmosphere",
+        "Group",
+        "Unit",
+        "typeBase",
+        "markScope",
+        "StaticObject",
+        "lfs",
+        "country",
+        "dblog",
+        "unitId",
+        "passUnits",
+        "coord",
+        "o",
+        "cutOff",
+        "topo",
+        "sVal",
+        "Object"
+    ]
+}

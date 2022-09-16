@@ -546,7 +546,7 @@ do
             }
             reconnaissance.reconCapability = reconCapability
 
-            function reconnaissance:dirSearch(ifRadioReport, targetsReceiver) --ifRadioReport布尔，是否以无线电消息的方式报告，不填默认不报;不加限制地要求AI搜索，返回targets[]
+            --[[function reconnaissance:dirSearch(ifRadioReport) --ifRadioReport布尔，是否以无线电消息的方式报告，不填默认不报;不加限制地要求AI搜索，返回targets[]
                 if not reconnaissance.unit:isExist() then --这个exist的真值等价于一个确实预编在了任务中的单元的存活状态，没激活但是没死也是返回为真的
                     if ifRadioReport then
                         SendMessageForRangeReference("单位已失去联络", 5, reconnaissance.rangeReference)
@@ -576,7 +576,7 @@ do
                 end
 
                 return targets
-            end
+            end--]]
 
             function reconnaissance:search(point, ifRadioReport) --要求ai以point(Vec3 Vec2皆可)为中心，reconCapability.radius为半径的二维范围里进行搜索，返回targets[]
                 if not reconnaissance.unit:isExist() then --这个exist的真值等价于一个确实预编在了任务中的单元的存活状态，没激活但是没死也是返回为真的
@@ -802,7 +802,7 @@ do
                 onlineGroupController.group = onlineGroup
                 onlineGroupController.groupName = onlineGroup:getName()
                 onlineGroupController.masterLinkPad = nil
-                onlineGroupController.public = {}
+                onlineGroupController.Public = {}
 
                 --text(显示在无线电指令上的文字)不应被改动，commandFunction索引过去的东西可以改，enable决定了这个能力目前可用与否
                 --头节点用来存激活开关指令，如果头结点的enable是true的话，后续所有capability的enable都会被当成是false
@@ -821,6 +821,12 @@ do
                     next = nil
                 }
                 onlineGroupController.missionCapability.head = onlineGroupController.missionCapability
+
+                onlineGroupController.Recon={}
+                do
+                    function onlineGroupController.Recon:search()
+                    end
+                end
 
                 onlineGroupController.reconnaissance = nil
                 onlineGroupController.reconCapability = nil
@@ -852,10 +858,6 @@ do
                     end
 
                     function onlineGroupController:getFirstAbleUnit() --返回组中第一个存活且未失能的机，若不存在这样的机则返回nil且返回前会把所有missionCapability的enable都置false，除非头结点的capability为true
-                        if onlineGroupController.group == nil then
-                            return nil
-                        end
-
                         if not onlineGroupController.group:isExist() then
                             return nil
                         end
@@ -930,6 +932,7 @@ do
                         end
                         return true
                     end
+
                 end
 
                 --使能函数包
@@ -958,8 +961,6 @@ do
                         onlineGroupController.missionCapability.enable = false
                         onlineGroupController.masterLinkPad:implementOnlineGroupController(onlineGroupController)
                     end
-
-                    onlineGroupController.missionCapability.data.commandFunction = onlineGroupController.activate
 
                     function onlineGroupController:highAltitudeHorizontalBombing(argsPack) --实施高空水平定点轰炸
                         local point = onlineGroupController.masterLinkPad.targetsManagement:getSPIVec3()
@@ -1105,7 +1106,7 @@ do
                 --所有的能力配置都必须任务一开始就配置好，但是你可以选择这个能力在游戏过程中何时可用何时不可用
                 do
                     --标准的侦查能力
-                    function onlineGroupController.public:initAreaRecon(reconCapability)
+                    function onlineGroupController.Public:initAreaRecon(reconCapability)
                         local data = {
                             text = onlineGroupController.groupName .. ":实施区域侦查",
                             commandFunction = onlineGroupController.areaRecon,
@@ -1119,7 +1120,7 @@ do
                     end
 
                     --标准的高空水平定点轰炸，实施这种任务需要群组可以设置“执行任务-轰炸”这一航路点动作,bombingParams的缺省值和原型详见定义内
-                    function onlineGroupController.public:initHighAltitudeHorizontalBombing(bombingParams)
+                    function onlineGroupController.Public:initHighAltitudeHorizontalBombing(bombingParams)
                         local localBombingParams = {
                             weaponType = nil,
                             expend = AI.Task.WeaponExpend["ONE"],
@@ -1160,7 +1161,7 @@ do
                     end
 
                     --近距离搜索和猎歼，实施这种任务需要群组可以设置“开始在航任务-搜索并攻击区域内目标”这一航路点动作，zoneRadius是其围绕SPI搜索猎歼的半径，缺省值800
-                    function onlineGroupController.public:initSearchAndHunting(zoneRadius)
+                    function onlineGroupController.Public:initSearchAndHunting(zoneRadius)
                         local localZoneRadius = 800
                         if zoneRadius ~= nil then
                             localZoneRadius = zoneRadius
@@ -1179,7 +1180,7 @@ do
                     end
 
                     --进行激光照射指示的能力，distanceLimitation不填默认40km，laserCode不填默认1688，overHeatedTime不填默认60
-                    function onlineGroupController.public:initLaserSpotting(distanceLimitation, laserCode, overHeatedTime)
+                    function onlineGroupController.Public:initLaserSpotting(distanceLimitation, laserCode, overHeatedTime)
                         local localDistanceLimitation = 40000
                         local localLaserCode = 1688
                         local localOverHeatedTime = 60
@@ -1219,7 +1220,7 @@ do
 
         function LinkPad.New(initedRangeReference, groupNameWaitForPlayerToEnter) --定义时只要传进来这个pad属于谁就好啦，注意一个Pad一旦new出来就会连带把这个rangeReference对应的commandTree给new出来，小心冲突
             local linkPad = {}
-            linkPad.public = {}
+            linkPad.Public = {}
             linkPad.onlineGroupControllers = nil --链表{data,next},data保存在链群组控制器
 
             --声明函数
@@ -1317,7 +1318,7 @@ do
                         linkPad:implementOnlineGroupController(onlineGroupController)
                     end
 
-                    function linkPad.public:insertOnlineGroupController(onlineGroupController, ifRadioReport) --ifRadioReport控制是否显式地报告控制权移交，不填默认不报
+                    function linkPad.Public:insertOnlineGroupController(onlineGroupController, ifRadioReport) --ifRadioReport控制是否显式地报告控制权移交，不填默认不报
 
                         onlineGroupController.masterLinkPad = linkPad
                         local node = {

@@ -27,5 +27,9 @@
         "sVal",
         "Object"
     ],
-    "Lua.runtime.version": "Lua 5.1"
+    "Lua.runtime.version": "Lua 5.1",
+    "Lua.workspace.library": [
+        "${3rd}/lfs/library"
+    ],
+    "Lua.workspace.checkThirdParty": false
 }

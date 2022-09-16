@@ -24,18 +24,18 @@ do
     --下面是创建和移交数据链控制器
     --AI以组群为单位受支配和控制，如果你希望某个AI组群接受支配，应该在这里创建好它的数据链控制器
     local reconGroupController = OnlineGroupController.New(reconGroup) --创建reconGroup的数据链控制器
-    reconGroupController.public:initAreaRecon(reconCapability) --向控制器声明该组群有区域侦查能力
-    reconGroupController.public:initLaserSpotting(nil,1688,180)
+    reconGroupController.Public:initAreaRecon(reconCapability) --向控制器声明该组群有区域侦查能力
+    reconGroupController.Public:initLaserSpotting(nil,1688,180)
 
-    PublicLinkPad.public:insertOnlineGroupController(reconGroupController) --向数据链实例移交该控制器
+    PublicLinkPad.Public:insertOnlineGroupController(reconGroupController) --向数据链实例移交该控制器
 
     PublicAttackerGroupController = OnlineGroupController.New(attackerGroup)
-    PublicAttackerGroupController.public:initSearchAndHunting()
-    PublicLinkPad.public:insertOnlineGroupController(PublicAttackerGroupController)
+    PublicAttackerGroupController.Public:initSearchAndHunting()
+    PublicLinkPad.Public:insertOnlineGroupController(PublicAttackerGroupController)
 
     PublicBomberGroupController=OnlineGroupController.New(bomberGroup)
-    PublicBomberGroupController.public:initHighAltitudeHorizontalBombing()
-    PublicLinkPad.public:insertOnlineGroupController(PublicBomberGroupController)
+    PublicBomberGroupController.Public:initHighAltitudeHorizontalBombing()
+    PublicLinkPad.Public:insertOnlineGroupController(PublicBomberGroupController)
 
     --上述代码执行完毕后，“134th kiap”这个组群成为一个数据链的控制组群，这个数据链中的受控AI组群为名为“侦察机”、“攻击机”、“轰炸机”的三个组群，分别可以执行侦查和照射激光、猎歼地面单位、高空水平轰炸任务
 end

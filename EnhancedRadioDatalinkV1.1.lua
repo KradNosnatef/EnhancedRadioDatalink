@@ -524,121 +524,6 @@ do
         end
     end
 
-    ----EnhancedReconCommand
-    do
-        --本类为一个侦查报告常用功能工具包，装订好诸元后可以复用这些诸元
-        Reconnaissance = {}
-
-        --[[
-            rangeReference为实例化后默认的反馈对象作用域
-            第三个参数为限制器，以距离和半径的方式刻意限制AI侦查能力
-        reconCapability={
-            distance=nil,
-            radius=nil
-        }    
-        --]]
-        function Reconnaissance.New(unit, rangeReference, reconCapability)
-            local reconnaissance = {}
-            reconnaissance.unit = unit
-            reconnaissance.rangeReference = {
-                range = rangeReference.range,
-                reference = rangeReference.reference
-            }
-            reconnaissance.reconCapability = reconCapability
-
-            --[[function reconnaissance:dirSearch(ifRadioReport) --ifRadioReport布尔，是否以无线电消息的方式报告，不填默认不报;不加限制地要求AI搜索，返回targets[]
-                if not reconnaissance.unit:isExist() then --这个exist的真值等价于一个确实预编在了任务中的单元的存活状态，没激活但是没死也是返回为真的
-                    if ifRadioReport then
-                        SendMessageForRangeReference("单位已失去联络", 5, reconnaissance.rangeReference)
-                    end
-                    return nil
-                elseif not reconnaissance.unit:isActive() then --这个真的只是“有没有处于延迟激活还没激活”的意思
-                    if ifRadioReport then
-                        SendMessageForRangeReference("该机尚未出动", 5, reconnaissance.rangeReference)
-                    end
-                    return nil
-                end
-
-                local targets = reconnaissance.unit:getController():getDetectedTargets()
-
-                if ifRadioReport then
-                    local text = "检测到的目标有："
-
-                    do
-                        local i = 1
-                        while targets[i] ~= nil do
-                            text = text .. "\n" .. i .. ": " .. targets[i].object:getTypeName()
-                            i = i + 1
-                        end
-                    end
-
-                    SendMessageForRangeReference(text, 10, reconnaissance.rangeReference)
-                end
-
-                return targets
-            end--]]
-
-            function reconnaissance:search(point, ifRadioReport) --要求ai以point(Vec3 Vec2皆可)为中心，reconCapability.radius为半径的二维范围里进行搜索，返回targets[]
-                if not reconnaissance.unit:isExist() then --这个exist的真值等价于一个确实预编在了任务中的单元的存活状态，没激活但是没死也是返回为真的
-                    if ifRadioReport then
-                        SendMessageForRangeReference("单位已失去联络", 5, reconnaissance.rangeReference)
-                    end
-                    return nil
-                elseif not reconnaissance.unit:isActive() then --这个真的只是“有没有处于延迟激活还没激活”的意思
-                    if ifRadioReport then
-                        SendMessageForRangeReference("该机尚未出动", 5, reconnaissance.rangeReference)
-                    end
-                    return nil
-                end
-
-
-                --DXbugMessage(18)
-                local targetsBuffle = reconnaissance.unit:getController():getDetectedTargets()
-                local targets = {}
-
-                do
-                    local i = 1
-                    while targetsBuffle[i] ~= nil do
-                        local sourceUnitPoint = TryWithoutObjectNilException.UnitGetPoint(reconnaissance.unit)
-                        local targetUnitPoint = TryWithoutObjectNilException.UnitGetPoint(targetsBuffle[i].object)
-                        if sourceUnitPoint ~= nil and targetUnitPoint ~= nil then
-                            if targetsBuffle[i].visible and targetsBuffle[i].type and targetsBuffle[i].distance then
-                                if mist.utils.get2DDist(targetUnitPoint, sourceUnitPoint) <
-                                    reconnaissance.reconCapability.distance and
-                                    mist.utils.get2DDist(targetUnitPoint, point) < reconnaissance.reconCapability.radius then
-
-                                    table.insert(targets, targetsBuffle[i])
-                                end
-                            end
-                        end
-                        i = i + 1
-                    end
-                end
-
-                --DXbugMessage(19)
-                if ifRadioReport then
-                    local text = "检测到的目标有："
-
-                    do
-                        local i = 1
-                        while targets[i] ~= nil do
-                            text = text .. "\n" .. i .. ": " .. targets[i].object:getTypeName()
-                            i = i + 1
-                        end
-                    end
-
-                    SendMessageForRangeReference(text, 10, reconnaissance.rangeReference)
-                end
-
-                --DXbugMessage(20)
-                return targets
-
-            end
-
-            return reconnaissance
-        end
-    end
-
     --EnhancedDataLinkManagement
     do
         --[[
@@ -822,17 +707,63 @@ do
                 }
                 onlineGroupController.missionCapability.head = onlineGroupController.missionCapability
 
-                onlineGroupController.Recon={}
+                onlineGroupController.Recon = {}
                 do
-                    function onlineGroupController.Recon:search()
+                    function onlineGroupController.Recon:search(unit, point)
+
+                        --DXbugMessage(18)
+                        local targetsBuffle = unit:getController():getDetectedTargets()
+                        local targets = {}
+
+                        do
+                            local i = 1
+                            while targetsBuffle[i] ~= nil do
+                                local sourceUnitPoint = TryWithoutObjectNilException.UnitGetPoint(unit)
+                                local targetUnitPoint = TryWithoutObjectNilException.UnitGetPoint(targetsBuffle[i].object)
+                                if sourceUnitPoint ~= nil and targetUnitPoint ~= nil then
+                                    if targetsBuffle[i].visible and targetsBuffle[i].type and targetsBuffle[i].distance then
+                                        if mist.utils.get2DDist(targetUnitPoint, sourceUnitPoint) <
+                                            onlineGroupController.reconCapability.distance and
+                                            mist.utils.get2DDist(targetUnitPoint, point) <
+                                            onlineGroupController.reconCapability.radius then
+
+                                            table.insert(targets, targetsBuffle[i])
+                                        end
+                                    end
+                                end
+                                i = i + 1
+                            end
+                        end
+
+                        local text = "检测到的目标有："
+
+                        do
+                            local i = 1
+                            while targets[i] ~= nil do
+                                text = text .. "\n" .. i .. ": " .. targets[i].object:getTypeName()
+                                i = i + 1
+                            end
+                        end
+
+                        SendMessageForRangeReference(text, 10, onlineGroupController:getRangeReference())
+
+                        --DXbugMessage(20)
+                        return targets
                     end
                 end
 
-                onlineGroupController.reconnaissance = nil
                 onlineGroupController.reconCapability = nil
 
                 --工具函数包
                 do
+                    function onlineGroupController:getSPIVec3()
+                        local point = onlineGroupController.masterLinkPad.targetsManagement:getSPIVec3()
+                        if point == nil then
+                            onlineGroupController.masterLinkPad:SPINotExistWarnMessage()
+                        end
+                        return point
+                    end
+
                     function onlineGroupController:getRangeReference()
                         if onlineGroupController.masterLinkPad == nil then
                             return {
@@ -904,33 +835,12 @@ do
                         currentNode.next = missionCapabilityNode
                     end
 
-                    function onlineGroupController:refreshReconnaissance() --刷新长机判定
+                    function onlineGroupController:isMissionEnable() --判断性用法：if isMissionEnable~=nil then刷新群组是否可以响应指令，这个函数有无线电回复，返回getFirstAbleUnit的返回值
                         local unit = onlineGroupController:getFirstAbleUnit()
                         if unit == nil then
-                            --群组没活人能执行任务啦
-                            onlineGroupController.reconnaissance = nil
-                            return
-                        end
-
-                        if onlineGroupController.reconnaissance == nil then
-                            onlineGroupController.reconnaissance = Reconnaissance.New(unit,
-                                onlineGroupController:getRangeReference(), onlineGroupController.reconCapability)
-                        elseif onlineGroupController.reconnaissance.unit:getName() == unit:getName() then
-                            return
-                        else
-                            onlineGroupController.reconnaissance = Reconnaissance.New(unit,
-                                onlineGroupController:getRangeReference(), onlineGroupController.reconCapability)
-                        end
-
-                    end
-
-                    function onlineGroupController:isMissionEnable() --刷新群组是否可以响应指令，这个函数有无线电回复，返回值是能否响应布尔
-                        onlineGroupController:refreshReconnaissance()
-                        if onlineGroupController.reconnaissance == nil then
                             SendMessageForRangeReference("群组无响应", 5, onlineGroupController:getRangeReference())
-                            return false
                         end
-                        return true
+                        return unit
                     end
 
                 end
@@ -939,17 +849,23 @@ do
                 do
                     function onlineGroupController:areaRecon() --实施区域侦查，显式地将侦查结果无线电回复，并将目标上行至数据链目标管理器
                         onlineGroupController.masterLinkPad.targetsManagement:stopTracking()
-                        local point = onlineGroupController.masterLinkPad.targetsManagement:getSPIVec3()
-                        local targets = nil
+
+                        local point = onlineGroupController:getSPIVec3()
                         if point == nil then
-                            onlineGroupController.masterLinkPad:SPINotExistWarnMessage()
                             return nil
                         end
-                        if onlineGroupController:isMissionEnable() then
+
+                        local unit = onlineGroupController:isMissionEnable()
+                        if unit==nil then
+                            return nil
+                        end
+
+                        local targets = nil
+                        if unit ~= nil then
                             --DXbugMessage(15)
-                            targets = onlineGroupController.reconnaissance:search(point, true)
+                            targets = onlineGroupController.Recon:search(unit, point)
                             --DXbugMessage(16)
-                            onlineGroupController.masterLinkPad:uploadTargets(targets, onlineGroupController)
+                            onlineGroupController.masterLinkPad:uploadTargets(targets, onlineGroupController,unit)
                             --DXbugMessage(17)
                         end
                     end
@@ -963,10 +879,8 @@ do
                     end
 
                     function onlineGroupController:highAltitudeHorizontalBombing(argsPack) --实施高空水平定点轰炸
-                        local point = onlineGroupController.masterLinkPad.targetsManagement:getSPIVec3()
-
+                        local point = onlineGroupController:getSPIVec3()
                         if point == nil then
-                            onlineGroupController.masterLinkPad:SPINotExistWarnMessage()
                             return nil
                         end
 
@@ -983,7 +897,7 @@ do
                             }
                         }
 
-                        if onlineGroupController:isMissionEnable() then
+                        if onlineGroupController:isMissionEnable() ~= nil then
                             SendMessageForRangeReference(onlineGroupController.groupName .. ":正在攻击", 5,
                                 onlineGroupController:getRangeReference())
                             onlineGroupController.group:getController():pushTask(engage)
@@ -991,11 +905,8 @@ do
                     end
 
                     function onlineGroupController:searchAndHunting(argsPack) --搜索攻击SPI附近的地面目标
-                        local point = onlineGroupController.masterLinkPad.targetsManagement:getSPIVec3()
-
+                        local point = onlineGroupController:getSPIVec3()
                         if point == nil then
-                            --DXbugMessage(12)
-                            onlineGroupController.masterLinkPad:SPINotExistWarnMessage()
                             return nil
                         end
 
@@ -1008,7 +919,7 @@ do
                             }
                         }
 
-                        if onlineGroupController:isMissionEnable() then
+                        if onlineGroupController:isMissionEnable() ~= nil then
                             SendMessageForRangeReference(onlineGroupController.groupName .. ":正在搜索和攻击"
                                 , 5,
                                 onlineGroupController:getRangeReference())
@@ -1017,7 +928,11 @@ do
                     end
 
                     function onlineGroupController:refreshLaserSpot(argsPack) --刷新激光照射点
-                        local point = onlineGroupController.masterLinkPad.targetsManagement:getSPIVec3()
+                        local point = onlineGroupController:getSPIVec3()
+                        if point == nil then
+                            return nil
+                        end
+
                         local spot = argsPack.spot
                         local spotterUnit = argsPack.spotterUnit
                         local repeatedPeriod = 0.242
@@ -1064,16 +979,13 @@ do
                     end
 
                     function onlineGroupController:laserSpotting(argsPack) --开关激光照射
-                        local spotterUnit = onlineGroupController:getFirstAbleUnit()
-                        local point = onlineGroupController.masterLinkPad.targetsManagement:getSPIVec3()
-
-
+                        local point = onlineGroupController:getSPIVec3()
                         if point == nil then
-                            onlineGroupController.masterLinkPad:SPINotExistWarnMessage()
                             return nil
                         end
 
-                        if onlineGroupController:isMissionEnable() then
+                        local spotterUnit=onlineGroupController:isMissionEnable()
+                        if spotterUnit ~= nil then
 
 
                             if argsPack.laserCapability.switch < 0 then
@@ -1116,7 +1028,9 @@ do
                         }
 
                         onlineGroupController.reconCapability = reconCapability
+                        DebugMessage(41)
                         onlineGroupController:dirInsertCapabilityNode(data, true)
+                        DebugMessage(42)
                     end
 
                     --标准的高空水平定点轰炸，实施这种任务需要群组可以设置“执行任务-轰炸”这一航路点动作,bombingParams的缺省值和原型详见定义内
@@ -1274,12 +1188,16 @@ do
                             linkPad.commandTree:deleteSubTree(missionCapability.trashBin)
                         end
 
+                        DebugMessage(43)
                         --装填新commandNode
                         if missionCapability.enable and
                             (missionCapability.head.enable == false or missionCapability == missionCapability.head) then
+                            DebugMessage(44)
                             local commandNode = CommandNode.NewByArgsPack(missionCapability.data.text, true,
                                 missionCapability.data.commandFunction,
                                 missionCapability.data.argsPack)
+
+                            DebugMessage(45)
                             linkPad.commandTree:addNode(linkPad.actionControlCommandNode, commandNode)
 
                             missionCapability.trashBin = commandNode
@@ -1303,7 +1221,7 @@ do
                             return nil
                         end
 
-                        if not onlineGroupController:isMissionEnable() then
+                        if onlineGroupController:isMissionEnable() == nil then
                             return nil
                         end
 
@@ -1345,7 +1263,6 @@ do
 
                         if TryWithoutObjectNilException.IsTargetDetectedAndVisible(trackerUnit, targetUnit) then
                             linkPad.targetsManagement:setSPIByVec3(TryWithoutObjectNilException.UnitGetPoint(targetUnit))
-                            --trigger.action.signalFlare(linkPad.targetsManagement:getSPIVec3(), 0, 90)
                         else
                             SendMessageForRangeReference("失去跟踪，SPI已记录最后已知位置", 5,
                                 linkPad.rangeReference)
@@ -1361,11 +1278,8 @@ do
                         linkPad.targetsManagement:setTrackingFunction(linkPad.eyesOnTarget, argsPack)
                     end
 
-                    function linkPad:uploadTargets(targets, uploaderOnlineGroupController)
-                        --SendMessageForRangeReference("startSendingA",5)
-                        --linkPad.targetsManagement:uploadTargets(targets, uploaderOnlineGroupController)
+                    function linkPad:uploadTargets(targets, uploaderOnlineGroupController,uploaderUnit)
                         linkPad.commandTree:deleteChildren(linkPad.targetsSelectorCommandNode)
-                        --SendMessageForRangeReference("startSendingB",5)
 
                         local commandNodes = {}
                         do
@@ -1376,7 +1290,7 @@ do
                                 local argsPack = {
                                     theCallerSelf = linkPad,
                                     targetUnit = targets[i].object,
-                                    trackerUnit = uploaderOnlineGroupController:getFirstAbleUnit()
+                                    trackerUnit = uploaderUnit
                                 }
                                 --SendMessageForRangeReference("startSending"..i,5)
                                 commandNodes[i] = CommandNode.NewByArgsPack(text, true, linkPad.startTracking, argsPack)

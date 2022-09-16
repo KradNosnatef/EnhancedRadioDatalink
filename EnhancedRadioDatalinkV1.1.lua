@@ -147,7 +147,7 @@ do
             mist.addEventHandler(UserMarkHandler.AddUserMark)
         end
 
-        function WhichIsMyCoalition(rangeReference)--返回enum coalition.side
+        function WhichIsMyCoalition(rangeReference) --返回enum coalition.side
             if rangeReference.range == 1 then
                 return rangeReference.reference
             elseif rangeReference.range == 2 then
@@ -556,7 +556,7 @@ do
                 local targetsManagement = {}
                 targetsManagement.linkPad = linkPad
                 targetsManagement.spiVec3 = nil --当且仅当是nil的时候代表不存在SPI
-                targetsManagement.spiMistMark=nil
+                targetsManagement.spiMistMark = nil
 
                 targetsManagement.trackingFunction = nil --用本类里的方法来刷入这个函数型成员，这个成员将以4HZ的频率执行，直到它返回nil或trackingCanceler被拉起为止
                 targetsManagement.trackingFunctionArgsPack = nil
@@ -694,26 +694,26 @@ do
                 end
 
                 function targetsManagement:spiDisplayHandler()
-                    if targetsManagement.spiVec3~=nil then
-                        if targetsManagement.spiMistMark~=nil then
+                    if targetsManagement.spiVec3 ~= nil then
+                        if targetsManagement.spiMistMark ~= nil then
                             mist.marker.remove(targetsManagement.spiMistMark.markId)
                         end
-                        local spiMarkIndex={
+                        local spiMarkIndex = {
                             pos = targetsManagement.spiVec3,
                             markType = 5,
-                            text = "↙"..UserMarkHandler.Ignore.Text.." SPI",
+                            text = "↙" .. UserMarkHandler.Ignore.Text .. " SPI",
                             markForCoa = WhichIsMyCoalition(targetsManagement.linkPad.rangeReference),
                             fontSize = 24,
                             fillColor = { 128, 0, 128, 96 },
                             color = { 0, 255, 0, 255 }
                         }
-                        targetsManagement.spiMistMark=mist.marker.add(spiMarkIndex)
+                        targetsManagement.spiMistMark = mist.marker.add(spiMarkIndex)
                     end
 
-                    return timer.getTime()+2
+                    return timer.getTime() + 1
                 end
 
-                timer.scheduleFunction(targetsManagement.spiDisplayHandler,targetsManagement,5)
+                timer.scheduleFunction(targetsManagement.spiDisplayHandler, targetsManagement, 5)
 
                 return targetsManagement
             end
@@ -1202,12 +1202,31 @@ do
 
                         linkPad.actionControlCommandNode = CommandNode.New("行动控制菜单", false)
 
+                        --临时，等加了节点锁定功能后要删掉
+                        do
+                            linkPad.displayLockerSwitch = false
+
+                            linkPad.switchDisplayLocker = function()
+                                if linkPad.displayLockerSwitch then
+                                    linkPad.commandTree:setDisplayLockerCommandNode(nil)
+                                    linkPad.displayLockerSwitch = false
+                                else
+                                    linkPad.commandTree:setDisplayLockerCommandNode(linkPad.commandTree.rootNode)
+                                    linkPad.displayLockerSwitch = true
+                                end
+                            end
+
+                            linkPad.switchDisplayLockerControlCommandNode = CommandNode.NewByArgsPack("切换锁定显示本菜单"
+                                , true, linkPad.switchDisplayLocker, { theCallerSelf = linkPad })
+                        end
 
                         linkPad.commandTree:addNode(linkPad.commandTree.rootNode, linkPad.setSPIByUserMarkCommandNode)
                         linkPad.commandTree:addNode(linkPad.commandTree.rootNode, linkPad.autoSetSPIByUserMarkCommandNode)
                         linkPad.commandTree:addNode(linkPad.commandTree.rootNode, linkPad.targetsSelectorCommandNode)
                         linkPad.commandTree:addNode(linkPad.commandTree.rootNode, linkPad.actionControlCommandNode)
 
+                        linkPad.commandTree:addNode(linkPad.commandTree.rootNode,
+                            linkPad.switchDisplayLockerControlCommandNode)
                         --linkPad.commandTree:setDisplayLockerCommandNode(linkPad.commandTree.rootNode)
                     end
                 end

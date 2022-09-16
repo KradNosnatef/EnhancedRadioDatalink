@@ -62,35 +62,75 @@ do
         do
             UserMarkHandler = {}
 
+            UserMarkHandler.Ignore = {
+                Text = "*ERD*",
+                Check = function(markText)
+                    if string.find(markText, UserMarkHandler.Ignore.Text) ~= nil then
+                        return true
+                    end
+                    return false
+                end
+            }
+
             UserMarkHandler.redMarkVec3 = nil
             UserMarkHandler.blueMarkVec3 = nil
-            UserMarkHandler.recallLinkList = {
-                ahead = nil,
-                functionPack = nil,
-                next = {
-                    ahead = UserMarkHandler.recallLinkList,
+            UserMarkHandler.RecallLinkList = {
+                head = {
+                    ahead = nil,
                     functionPack = nil,
-                    next = nil
-                }
-            } --回调函数链表{ahead,functionPack,next}，会在下面这个handler执行的时候用FunctionPackerAndCaller把functionPack挨个执行过去
+                    next = {
+                        ahead = nil,
+                        functionPack = nil,
+                        next = nil
+                    }
+                },
 
-            function UserMarkHandler.Add(event)
-                if event.id == 25 then
-                    if event.coalition == coalition.side["RED"] then
-                        UserMarkHandler.redMarkVec3 = event.pos
-                        SendMessageForRangeReference("增加了新的地图标记", 5,
-                            { range = 1, reference = coalition.side["RED"] })
-                    elseif event.coalition == coalition.side["BLUE"] then
-                        UserMarkHandler.blueMarkVec3 = event.pos
-                        SendMessageForRangeReference("增加了新的地图标记", 5,
-                            { range = 1, reference = coalition.side["BLUE"] })
+                Insert = function(functionPack) --返回的是recallNode的索引，保存以用于delete节点
+                    local recallNode = {
+                        ahead = UserMarkHandler.RecallLinkList.head,
+                        functionPack = functionPack,
+                        next = UserMarkHandler.RecallLinkList.head.next
+                    }
+
+                    UserMarkHandler.RecallLinkList.head.next = recallNode
+                    recallNode.next.ahead = recallNode
+                    return recallNode
+                end,
+
+                Delete = function(recallNode)
+                    if recallNode.functionPack ~= nil then
+                        recallNode.ahead.next = recallNode.next
+                        recallNode.next.ahead = recallNode.ahead
+
+                        recallNode.ahead = nil
+                        recallNode.functionPack = nil
+                        recallNode.next = nil
                     end
+                end
+            } --回调函数链表{ahead,functionPack,next}，会在下事件handler执行的时候用FunctionPackerAndCaller把functionPack挨个执行过去
+            UserMarkHandler.RecallLinkList.head.next.ahead = UserMarkHandler.RecallLinkList.head
 
-                    do
-                        local currentRecallNode = UserMarkHandler.recallLinkList.next
-                        while currentRecallNode.functionPack ~= nil do
-                            FunctionPackerAndCaller(currentRecallNode.functionPack)
-                            currentRecallNode = currentRecallNode.next
+            function UserMarkHandler.AddUserMark(event)
+                if event.id == 25 then
+                    --DXbugMessage(event.text)
+                    if not UserMarkHandler.Ignore.Check(event.text) then
+                        --DXbugMessage(73)
+                        if event.coalition == coalition.side["RED"] then
+                            UserMarkHandler.redMarkVec3 = event.pos
+                            SendMessageForRangeReference("增加了新的地图标记", 5,
+                                { range = 1, reference = coalition.side["RED"] })
+                        elseif event.coalition == coalition.side["BLUE"] then
+                            UserMarkHandler.blueMarkVec3 = event.pos
+                            SendMessageForRangeReference("增加了新的地图标记", 5,
+                                { range = 1, reference = coalition.side["BLUE"] })
+                        end
+
+                        do
+                            local currentRecallNode = UserMarkHandler.RecallLinkList.head.next
+                            while currentRecallNode.functionPack ~= nil do
+                                FunctionPackerAndCaller(currentRecallNode.functionPack)
+                                currentRecallNode = currentRecallNode.next
+                            end
                         end
                     end
                 end
@@ -104,33 +144,10 @@ do
                 end
             end
 
-            function UserMarkHandler.InsertRecallNode(functionPack) --返回的是recallNode的索引，保存以用于delete节点
-                local recallNode = {
-                    ahead = UserMarkHandler.recallLinkList,
-                    functionPack = functionPack,
-                    next = UserMarkHandler.recallLinkList.next
-                }
-
-                UserMarkHandler.recallLinkList.next = recallNode
-                recallNode.next.ahead = recallNode
-                return recallNode
-            end
-
-            function UserMarkHandler.deleteRecallNode(recallNode)
-                if recallNode.functionPack ~= nil then
-                    recallNode.ahead.next = recallNode.next
-                    recallNode.next.ahead = recallNode.ahead
-
-                    recallNode.ahead = nil
-                    recallNode.functionPack = nil
-                    recallNode.next = nil
-                end
-            end
-
-            mist.addEventHandler(UserMarkHandler.Add)
+            mist.addEventHandler(UserMarkHandler.AddUserMark)
         end
 
-        function WhichIsMyCoalition(rangeReference)
+        function WhichIsMyCoalition(rangeReference)--返回enum coalition.side
             if rangeReference.range == 1 then
                 return rangeReference.reference
             elseif rangeReference.range == 2 then
@@ -539,6 +556,8 @@ do
                 local targetsManagement = {}
                 targetsManagement.linkPad = linkPad
                 targetsManagement.spiVec3 = nil --当且仅当是nil的时候代表不存在SPI
+                targetsManagement.spiMistMark=nil
+
                 targetsManagement.trackingFunction = nil --用本类里的方法来刷入这个函数型成员，这个成员将以4HZ的频率执行，直到它返回nil或trackingCanceler被拉起为止
                 targetsManagement.trackingFunctionArgsPack = nil
                 targetsManagement.trackingStoper = true --为true时，trackingFunction的执行将在下一次后停止
@@ -614,11 +633,11 @@ do
                 end
 
                 function targetsManagement:setGourndSPI(pointVec2orVec3) --传Vec3或Vec2进来都可以
-                    targetsManagement.spiVec3 = mist.utils.makeVec3GL(pointVec2orVec3)
+                    targetsManagement:setSPIByVec3(mist.utils.makeVec3GL(pointVec2orVec3))
                 end
 
                 function targetsManagement:clearSPI()
-                    targetsManagement.spiVec3 = nil
+                    targetsManagement:setSPIByVec3(nil)
                 end
 
                 function targetsManagement:dirSetSPIByUserMark()
@@ -645,7 +664,7 @@ do
                     if targetsManagement.autoSetSPIByUserMarkRecallNode ~= nil then
                         SendMessageForRangeReference("已停止自动接收用户标记", 5,
                             targetsManagement:getRangeReference())
-                        UserMarkHandler.deleteRecallNode(targetsManagement.autoSetSPIByUserMarkRecallNode)
+                        UserMarkHandler.RecallLinkList.Delete(targetsManagement.autoSetSPIByUserMarkRecallNode)
                         targetsManagement.autoSetSPIByUserMarkRecallNode = nil
                     end
                 end
@@ -661,7 +680,7 @@ do
                         }
                         --DXbugMessage(2)
 
-                        targetsManagement.autoSetSPIByUserMarkRecallNode = UserMarkHandler.InsertRecallNode(functionPack)
+                        targetsManagement.autoSetSPIByUserMarkRecallNode = UserMarkHandler.RecallLinkList.Insert(functionPack)
                         --DXbugMessage(3)
 
                         targetsManagement:stopTracking()
@@ -673,6 +692,28 @@ do
                         targetsManagement:switchOffAutoSetSPIByUserMark()
                     end
                 end
+
+                function targetsManagement:spiDisplayHandler()
+                    if targetsManagement.spiVec3~=nil then
+                        if targetsManagement.spiMistMark~=nil then
+                            mist.marker.remove(targetsManagement.spiMistMark.markId)
+                        end
+                        local spiMarkIndex={
+                            pos = targetsManagement.spiVec3,
+                            markType = 5,
+                            text = "↙"..UserMarkHandler.Ignore.Text.." SPI",
+                            markForCoa = WhichIsMyCoalition(targetsManagement.linkPad.rangeReference),
+                            fontSize = 24,
+                            fillColor = { 128, 0, 128, 96 },
+                            color = { 0, 255, 0, 255 }
+                        }
+                        targetsManagement.spiMistMark=mist.marker.add(spiMarkIndex)
+                    end
+
+                    return timer.getTime()+2
+                end
+
+                timer.scheduleFunction(targetsManagement.spiDisplayHandler,targetsManagement,5)
 
                 return targetsManagement
             end
@@ -856,7 +897,7 @@ do
                         end
 
                         local unit = onlineGroupController:isMissionEnable()
-                        if unit==nil then
+                        if unit == nil then
                             return nil
                         end
 
@@ -865,7 +906,7 @@ do
                             --DXbugMessage(15)
                             targets = onlineGroupController.Recon:search(unit, point)
                             --DXbugMessage(16)
-                            onlineGroupController.masterLinkPad:uploadTargets(targets, onlineGroupController,unit)
+                            onlineGroupController.masterLinkPad:uploadTargets(targets, onlineGroupController, unit)
                             --DXbugMessage(17)
                         end
                     end
@@ -984,7 +1025,7 @@ do
                             return nil
                         end
 
-                        local spotterUnit=onlineGroupController:isMissionEnable()
+                        local spotterUnit = onlineGroupController:isMissionEnable()
                         if spotterUnit ~= nil then
 
 
@@ -1278,7 +1319,7 @@ do
                         linkPad.targetsManagement:setTrackingFunction(linkPad.eyesOnTarget, argsPack)
                     end
 
-                    function linkPad:uploadTargets(targets, uploaderOnlineGroupController,uploaderUnit)
+                    function linkPad:uploadTargets(targets, uploaderOnlineGroupController, uploaderUnit)
                         linkPad.commandTree:deleteChildren(linkPad.targetsSelectorCommandNode)
 
                         local commandNodes = {}

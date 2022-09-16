@@ -23,11 +23,11 @@ do
 
     --下面是创建和移交数据链控制器
     --AI以组群为单位受支配和控制，如果你希望某个AI组群接受支配，应该在这里创建好它的数据链控制器
-    local reconGroupController = OnlineGroupController.New(reconGroup) --创建reconGroup的数据链控制器
-    reconGroupController.Public:initAreaRecon(reconCapability) --向控制器声明该组群有区域侦查能力
-    reconGroupController.Public:initLaserSpotting(nil,1688,180)
+    PublicReconGroupController = OnlineGroupController.New(reconGroup) --创建reconGroup的数据链控制器
+    PublicReconGroupController.Public:initAreaRecon(reconCapability) --向控制器声明该组群有区域侦查能力
+    PublicReconGroupController.Public:initLaserSpotting(nil,1688,180)
 
-    PublicLinkPad.Public:insertOnlineGroupController(reconGroupController) --向数据链实例移交该控制器
+    PublicLinkPad.Public:insertOnlineGroupController(PublicReconGroupController) --向数据链实例移交该控制器
 
     PublicAttackerGroupController = OnlineGroupController.New(attackerGroup)
     PublicAttackerGroupController.Public:initSearchAndHunting()

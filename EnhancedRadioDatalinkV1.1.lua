@@ -1028,9 +1028,9 @@ do
                         }
 
                         onlineGroupController.reconCapability = reconCapability
-                        DebugMessage(41)
+                        --DXbugMessage(41)
                         onlineGroupController:dirInsertCapabilityNode(data, true)
-                        DebugMessage(42)
+                        --DXbugMessage(42)
                     end
 
                     --标准的高空水平定点轰炸，实施这种任务需要群组可以设置“执行任务-轰炸”这一航路点动作,bombingParams的缺省值和原型详见定义内
@@ -1188,16 +1188,16 @@ do
                             linkPad.commandTree:deleteSubTree(missionCapability.trashBin)
                         end
 
-                        DebugMessage(43)
+                        --DXbugMessage(43)
                         --装填新commandNode
                         if missionCapability.enable and
                             (missionCapability.head.enable == false or missionCapability == missionCapability.head) then
-                            DebugMessage(44)
+                            --DXbugMessage(44)
                             local commandNode = CommandNode.NewByArgsPack(missionCapability.data.text, true,
                                 missionCapability.data.commandFunction,
                                 missionCapability.data.argsPack)
 
-                            DebugMessage(45)
+                            --DXbugMessage(45)
                             linkPad.commandTree:addNode(linkPad.actionControlCommandNode, commandNode)
 
                             missionCapability.trashBin = commandNode

@@ -222,6 +222,9 @@ do
                 end
 
                 function node:safeCommandFunction()
+
+                    --DXbugMessage(1919810)
+
                     if node.tree ~= node.lastTree then
                         SendMessageForRangeReference("指令已过期，请刷新一下无线电菜单", 5,
                             node.lastTree.rangeReference)
@@ -273,14 +276,14 @@ do
 
                     if node.isCommand then
                         if node.tree.rangeReference.range == 0 then
-                            missionCommands.addCommand(node.text, path, node.safeCommandFunction, node, unpack(node.xArg))
+                            missionCommands.addCommand(node.text, path, node.safeCommandFunction, node)
                         elseif node.tree.rangeReference.range == 1 then
                             missionCommands.addCommandForCoalition(node.tree.rangeReference.reference, node.text, path,
-                                node.safeCommandFunction, node, unpack(node.xArg))
+                                node.safeCommandFunction, node)
                         elseif node.tree.rangeReference.range == 2 then
                             missionCommands.addCommandForGroup(node.tree.rangeReference.reference:getID(), node.text,
                                 path,
-                                node.safeCommandFunction, node, unpack(node.xArg))
+                                node.safeCommandFunction, node)
                         end
                     else
                         if node.tree.rangeReference.range == 0 then
@@ -1053,6 +1056,34 @@ do
                             end
                         end
                     end
+
+                    function onlineGroupController:artilleryShelling(argsPack)
+                        local point = onlineGroupController:getSPIVec3()
+                        if point == nil then
+                            return nil
+                        end
+
+                        --DXbugMessage(512)
+                        --DXbugMessage(215)
+
+                        local engage = {
+                            id = "FireAtPoint",
+                            params = {
+                                point = mist.utils.makeVec2(point),
+                                expendQty = argsPack.shellingParams.expendQty,
+                                expendQtyEnabled = true,
+                                weaponType = argsPack.shellingParams.weaponType
+                            }
+                        }
+                        --DXbugMessage(216)
+
+                        if onlineGroupController:isMissionEnable() ~= nil then
+                            --DXbugMessage(217)
+                            SendMessageForRangeReference(onlineGroupController.groupName .. ":正在攻击", 5,
+                                onlineGroupController:getRangeReference())
+                            onlineGroupController.group:getController():pushTask(engage)
+                        end
+                    end
                 end
 
                 --配置函数包
@@ -1165,6 +1196,37 @@ do
 
                         onlineGroupController:dirInsertCapabilityNode(data, true)
                     end
+
+                    --地面群组和舰船所使用的能力，相当于编辑器里的“向指定点开火”
+                    function onlineGroupController.Public:initArtilleryShelling(shellingParams)
+                        --DXbugMessage(213)
+                        local localShellingParams = {
+                            weaponType = nil,
+                            expendQty = 1
+                        }
+                        do
+                            if shellingParams ~= nil then
+                                if shellingParams.weaponType ~= nil then
+                                    localShellingParams.weaponType = shellingParams.weaponType
+                                end
+                                if shellingParams.expendQty ~= nil then
+                                    localShellingParams.expendQty = shellingParams.expendQty
+                                end
+                            end
+                        end
+
+                        local data = {
+                            text = onlineGroupController.groupName .. ":炮击",
+                            commandFunction = onlineGroupController.artilleryShelling,
+                            argsPack = {
+                                theCallerSelf = onlineGroupController,
+                                shellingParams = localShellingParams
+                            }
+                        }
+
+                        onlineGroupController:dirInsertCapabilityNode(data, true)
+                        --DXbugMessage(214)
+                    end
                 end
 
                 return onlineGroupController
@@ -1252,7 +1314,6 @@ do
                         --装填新commandNode
                         if missionCapability.enable and
                             (missionCapability.head.enable == false or missionCapability == missionCapability.head) then
-                            --DXbugMessage(44)
                             local commandNode = CommandNode.NewByArgsPack(missionCapability.data.text, true,
                                 missionCapability.data.commandFunction,
                                 missionCapability.data.argsPack)

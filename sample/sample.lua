@@ -3,6 +3,8 @@ do
     local reconGroup = Group.getByName("侦察机") --获取这个组群对象
     local attackerGroup = Group.getByName("攻击机") --获取这个组群对象
     local bomberGroup = Group.getByName("轰炸机") --获取这个组群对象
+    local fleetGroup=Group.getByName("巡航导弹支援舰队")--获取这个组群对象
+    local TBMGroup=Group.getByName("弹道导弹部队")--获取这个组群对象
 
     local playerGroup=Group.getByName("134th kiap") --获取这个组群对象
 
@@ -36,6 +38,14 @@ do
     PublicBomberGroupController=OnlineGroupController.New(bomberGroup)
     PublicBomberGroupController.Public:initHighAltitudeHorizontalBombing()
     PublicLinkPad.Public:insertOnlineGroupController(PublicBomberGroupController)
+
+    PublicFleetGroupController=OnlineGroupController.New(fleetGroup)
+    PublicFleetGroupController.Public.initArtilleryShelling()
+    PublicLinkPad.Public:insertOnlineGroupController(PublicFleetGroupController)
+
+    PublicTBMGroupController=OnlineGroupController.New(TBMGroup)
+    PublicTBMGroupController.Public.initArtilleryShelling()
+    PublicLinkPad.Public:insertOnlineGroupController(PublicTBMGroupController)
 
     --上述代码执行完毕后，“134th kiap”这个组群成为一个数据链的控制组群，这个数据链中的受控AI组群为名为“侦察机”、“攻击机”、“轰炸机”的三个组群，分别可以执行侦查和照射激光、猎歼地面单位、高空水平轰炸任务
 end
